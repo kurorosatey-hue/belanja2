@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Belanja 2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh; color: #eaeaea; padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+  .progress-text { text-align: center; color: #8b8fa3; font-size: 14px; margin-bottom: 14px; }
+  .bar { height: 8px; background: rgba(255,255,255,.08); border-radius: 99px; overflow: hidden; margin-bottom: 24px; }
+  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #4ade80, #22d3ee); border-radius: 99px; transition: width .35s ease; }
+  ul { list-style: none; }
+  li {
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
+    border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+    cursor: pointer; user-select: none; transition: all .18s ease;
+  }
+  li:active { transform: scale(.98); }
+  li.done { background: rgba(74,222,128,.08); border-color: rgba(74,222,128,.25); }
+  .box {
+    width: 26px; height: 26px; min-width: 26px; border-radius: 8px;
+    border: 2px solid #555a6e; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: transparent; transition: all .18s ease;
+  }
+  li.done .box { background: #4ade80; border-color: #4ade80; color: #10241a; }
+  .name { flex: 1; font-size: 16px; font-weight: 600; transition: all .18s ease; }
+  li.done .name { text-decoration: line-through; color: #6b7080; }
+  .price { font-size: 13px; color: #8b8fa3; font-weight: 500; }
+  .qty { font-size: 13px; color: #6c7cff; font-weight: 700; }
+  .total-box {
+    margin-top: 22px; text-align: center; background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.09); border-radius: 14px; padding: 16px;
+  }
+  .total-box .lbl { font-size: 13px; color: #8b8fa3; margin-bottom: 4px; }
+  .total-box .val { font-size: 24px; font-weight: 800; color: #4ade80; }
+  .reset {
+    display: block; margin: 24px auto 0; background: none; border: 1px solid #444;
+    color: #8b8fa3; padding: 10px 26px; border-radius: 10px; font-size: 14px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛒 Belanja 2</h1>
+  <div class="progress-text" id="ptext">0 / 0</div>
+  <div class="bar"><div id="pbar"></div></div>
+  <ul id="list"></ul>
+  <div class="total-box" id="tbox" style="display:none">
+    <div class="lbl">Total yang sudah dibelanjakan</div>
+    <div class="val" id="tval">Rp0</div>
+  </div>
+  <button class="reset" onclick="resetAll()">Reset centang</button>
+</div>
+<script>
+const ITEMS = [
+  { n: "Ayam", q: "3kg potong rica kecil", p: null },
+  { n: "Kemangi", q: "", p: 10000 },
+  { n: "Kemiri", q: "", p: 5000 },
+  { n: "Jeruk nipis", q: "", p: null },
+  { n: "Kecap", q: "", p: null },
+  { n: "Bawang bombay", q: "", p: null },
+  { n: "Bumbu dapur (sereh, lengkuas, kunyit, daun salam)", q: "5/10rb", p: 10000 },
+  { n: "Royco", q: "", p: 5000 },
+  { n: "Timun", q: "2kg", p: null },
+  { n: "Totole", q: "", p: null },
+  { n: "Cup untuk buah", q: "", p: null },
+  { n: "Aqua", q: "3 dus", p: null },
+  { n: "Beras", q: "5 liter", p: null },
+  { n: "Minyak", q: "2 liter", p: null },
+  { n: "Plastik", q: "1kg", p: null },
+  { n: "Plastik kresek", q: "", p: null },
+];
+const KEY = "belanja2_v1";
+let state = JSON.parse(localStorage.getItem(KEY) || "{}");
+
+const list = document.getElementById("list");
+function render() {
+  list.innerHTML = "";
+  ITEMS.forEach((it, i) => {
+    const li = document.createElement("li");
+    if (state[i]) li.classList.add("done");
+    li.innerHTML = `<div class="box">✓</div>
+      <div class="name">${it.n}</div>
+      ${it.q ? `<div class="qty">${it.q}</div>` : ""}
+      ${it.p ? `<div class="price">Rp${it.p.toLocaleString("id-ID")}</div>` : ""}`;
+    li.onclick = () => { state[i] = !state[i]; save(); render(); };
+    list.appendChild(li);
+  });
+  const done = Object.values(state).filter(Boolean).length;
+  document.getElementById("ptext").textContent = `${done} / ${ITEMS.length} dibeli`;
+  document.getElementById("pbar").style.width = (done / ITEMS.length * 100) + "%";
+  const total = ITEMS.reduce((s, it, i) => s + (state[i] && it.p ? it.p : 0), 0);
+  const tb = document.getElementById("tbox");
+  if (total > 0) { tb.style.display = "block"; document.getElementById("tval").textContent = "Rp" + total.toLocaleString("id-ID"); }
+  else tb.style.display = "none";
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function resetAll() { state = {}; save(); render(); }
+render();
+</script>
+</body>
+</html>
